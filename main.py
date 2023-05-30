@@ -59,9 +59,9 @@ async def show_stats(message: types.Message):
 async def process_name(message: types.Message, state: FSMContext):
     await Form.next()
     async with state.proxy() as data:
-        data['nowad'] = message
-    await bot.send_message(message.chat.id, f"Are you sure you want to send this? (y/n)\n{message.text} ")
-
+        data['nowad'] = message.message_id
+    await bot.copy_message(chat_id=message.chat.id, from_chat_id=message.chat.id, message_id=data['nowad'])
+    await bot.send_message(message.chat.id, f"Are you sure you want to send this? (y/n)")
 @dp.message_handler(state=Form.ays)
 async def process(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
@@ -70,7 +70,7 @@ async def process(message: types.Message, state: FSMContext):
             await message.reply("OK, sending...")
             f = open("users.txt")
             for i in f.read().split("\n"):
-                await bot.copy_message(chat_id=i, message_id=data['nowad'].message_id)
+                await bot.copy_message(chat_id=i, from_chat_id=message.chat.id, message_id=data['nowad'])
             await bot.send_message(message.chat.id, "Sent!")
         else:
             await message.reply('OK, I won\'t send anything')
