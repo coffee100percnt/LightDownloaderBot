@@ -53,13 +53,13 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler(filters.builtin.IDFilter(ADMIN_ID), commands=['send_ad'])
 async def show_stats(message: types.Message):
     await Form.nowad.set()
-    await message.reply("Send ad's text")
+    await message.reply("Send the ad")
 
 @dp.message_handler(state=Form.nowad)
 async def process_name(message: types.Message, state: FSMContext):
     await Form.next()
     async with state.proxy() as data:
-        data['nowad'] = message.text
+        data['nowad'] = message
     await bot.send_message(message.chat.id, f"Are you sure you want to send this? (y/n)\n{message.text} ")
 
 @dp.message_handler(state=Form.ays)
@@ -70,7 +70,7 @@ async def process(message: types.Message, state: FSMContext):
             await message.reply("OK, sending...")
             f = open("users.txt")
             for i in f.read().split("\n"):
-                await bot.send_message(i, data["nowad"])
+                await bot.copy_message(chat_id=i, message_id=data['nowad'].message_id)
             await bot.send_message(message.chat.id, "Sent!")
         else:
             await message.reply('OK, I won\'t send anything')
