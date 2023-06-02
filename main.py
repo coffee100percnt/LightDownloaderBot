@@ -2,8 +2,9 @@ import os
 import logging
 import yt_dlp
 import time
-import userbase
+import json
 
+userbase = open
 from aiogram import Bot, Dispatcher, types, filters, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -66,7 +67,7 @@ async def process(message: types.Message, state: FSMContext):
         print(data)
         if message.text == "y":
             await message.reply("OK, sending...")
-            for i in userbase.users:
+            for i in :
                 await bot.copy_message(chat_id=i, from_chat_id=message.chat.id, message_id=data['nowad'].message_id)
             await bot.send_message(message.chat.id, "Sent!")
         else:
