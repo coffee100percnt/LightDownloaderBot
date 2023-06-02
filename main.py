@@ -2,13 +2,16 @@ import os
 import logging
 import yt_dlp
 import time
-import json
+import mmap
 
 userbase = open
 from aiogram import Bot, Dispatcher, types, filters, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import ParseMode
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 logging.basicConfig(level=logging.INFO)
 
 API_TOKEN = '5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo'
@@ -67,7 +70,7 @@ async def process(message: types.Message, state: FSMContext):
         print(data)
         if message.text == "y":
             await message.reply("OK, sending...")
-            for i in :
+            for i in userbase.users:
                 await bot.copy_message(chat_id=i, from_chat_id=message.chat.id, message_id=data['nowad'].message_id)
             await bot.send_message(message.chat.id, "Sent!")
         else:
@@ -88,12 +91,17 @@ async def process_name(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
+    f = open(f'{os.getcwd()}/users.txt', 'r')
+    s = f.read().find(str(message.chat.id))
+    f.close()
     print(message.chat.id)
-    if message.chat.id in userbase.users:
+    if s != -1:
         pass
 
     else:
-        userbase.users.append(message.chat.id)
+        fi = open(f'{os.getcwd()}/users.txt', 'a')
+        fi.write(f"{message.chat.id}\n")
+        fi.close()
     await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
 
 @dp.message_handler(filters.Regexp(r'https?://vm\.tiktok\.com|https?://www\.youtube\.com|https?://youtu\.be'))
