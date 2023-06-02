@@ -14,8 +14,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 logging.basicConfig(level=logging.INFO)
 
 API_TOKEN = '5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo'
-#ADMIN_ID = '1554852514'
-ADMIN_ID = '5229672176'
+ADMIN_ID = '1554852514'
+#ADMIN_ID = '5229672176'
 todays_ad = ""
 
 class Form(StatesGroup):
@@ -26,10 +26,12 @@ class Form(StatesGroup):
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-def download_file(file: types.File):
-     file_path = file.file_path
-     destination = f"{os.getcwd()}/photo.jpg"
-     bot.download_file(file_path, destination)
+async def download_file(message: types.Message):
+    file_id = message.document.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    destination = f"{os.getcwd()}/photo.jpg"
+    bot.download_file(file_path, destination)
 
 class DownloadState(StatesGroup):
     waiting_for_video_url = State()
@@ -61,7 +63,7 @@ async def show_stats(message: types.Message):
     await Form.nowad.set()
     await message.reply("Send the ad")
 
-@dp.message_handler(state=Form.nowad)
+@dp.message_handler(state=Form.nowad, content_types=['any'])
 async def process_name(message: types.Message, state: FSMContext):
     await Form.next()
     async with state.proxy() as data:
@@ -69,10 +71,7 @@ async def process_name(message: types.Message, state: FSMContext):
         await message.reply("OK, sending...")
         f = open("users.txt")
         for i in f.read().split("\n"):
-            await types.ChatActions.upload_photo()
-            media = types.MediaGroup()
-            media.attach_photo(types.InputFile('photo.jpg'), data['nowad'].text)
-            await bot.send_media_group(chat_id=i)
+            await bot.copy_message(chat_id=i, from_chat_id=data['nowad'].chat.id, message_id=data['nowad'].message_id)
         await bot.send_message(message.chat.id, "Sent!")
     # await bot.copy_message(chat_id=message.chat.id, from_chat_id=message.chat.id, message_id=data['nowad'].message_id)
     # await bot.send_message(message.chat.id, f"Are you sure you want to send this? (y/n)")
