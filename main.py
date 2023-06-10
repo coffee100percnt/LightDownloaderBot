@@ -5,7 +5,6 @@ import yt_dlp
 import time
 import re
 
-userbase = open
 from aiogram import Bot, Dispatcher, types, filters, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -106,27 +105,18 @@ async def send_welcome(message: types.Message):
         fi.close()
     await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
 
-# filters.Regexp(r'https?://vm\.tiktok\.com|https?://*\.youtube\.com|https?://youtu\.be')
-
-@dp.message_handler()
+@dp.message_handler(filters.Regexp(r'(https?://\S+)'))
 async def handle_tiktok_video(message: types.Message):
-    await message.reply("Thanks for sending me video link! Please wait while I download the video...")
-
     video_url = re.findall(r'(https?://\S+)', message.text)
 
     # Download the video using yt-dlp
     for i in range(len(video_url)):
         with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s'}) as ydl:
+            await bot.send_chat_action(message.chat.id, "upload_video")
             result = ydl.extract_info(video_url[i], download=True)
             filename = ydl.prepare_filename(result)
             await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
-            asyncio.sleep(10)
             os.remove(f'{os.getcwd()}/{filename}')
-
-    # Send the video file to the user
-    # await bot.send_message(message.chat.id, todays_ad)
-    # time.sleep(5)
-    # os.remove(f'{os.getcwd()}/{filename}')
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
