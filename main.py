@@ -2,7 +2,6 @@ import asyncio
 import os
 import logging
 import yt_dlp
-import time
 import re
 
 from aiogram import Bot, Dispatcher, types, filters, executor
@@ -105,6 +104,7 @@ async def send_welcome(message: types.Message):
         fi.close()
     await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
 
+@dp.message_handler()
 @dp.message_handler(filters.Regexp(r'(https?://\S+)'))
 async def handle_tiktok_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
@@ -116,7 +116,9 @@ async def handle_tiktok_video(message: types.Message):
             result = ydl.extract_info(video_url[i], download=True)
             filename = ydl.prepare_filename(result)
             await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
+            # asyncio.sleep(10)
             os.remove(f'{os.getcwd()}/{filename}')
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
+    
