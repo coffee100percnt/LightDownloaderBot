@@ -108,16 +108,19 @@ async def send_welcome(message: types.Message):
 @dp.message_handler(filters.Regexp(r'(https?://\S+)'))
 async def handle_tiktok_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
-
+    agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
     # Download the video using yt-dlp
-    for i in range(len(video_url)):
-        with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s'}) as ydl:
-            await bot.send_chat_action(message.chat.id, "upload_video")
-            result = ydl.extract_info(video_url[i], download=True)
-            filename = ydl.prepare_filename(result)
-            await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
-            # asyncio.sleep(10)
-            os.remove(f'{os.getcwd()}/{filename}')
+    try:   
+        for i in range(len(video_url)):
+            with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s', 'cookiefile': f"{os.getcwd()}/insta.txt"}) as ydl:
+                await bot.send_chat_action(message.chat.id, "upload_video")
+                result = ydl.extract_info(video_url[i], download=True)
+                filename = ydl.prepare_filename(result)
+                await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
+                # asyncio.sleep(10)
+                os.remove(f'{os.getcwd()}/{filename}')
+    except:
+        await bot.send_message(message.chat.id, "Oh no, an error occured! Please report it to @lightdownload_feedback_bot with code")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
