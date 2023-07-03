@@ -44,16 +44,13 @@ async def userbase_modifier_on_call(call):
     if call.data == "langru":
         f = open(f'{os.getcwd()}/users.json', 'r')
         s = json.loads(f.read())
+        f.close() 
+        s["ru"].append(call.from_user.id)
+        result = json.dumps(s)
+        f = open(f'{os.getcwd()}/users.json', 'w')
+        f.write(result)
         f.close()
-        if call.from_user.id in s["en"] or s["ru"]:
-            pass
-        else: 
-            s["ru"].append(call.from_user.id)
-            result = json.dumps(s)
-            f = open(f'{os.getcwd()}/users.json', 'w')
-            f.write(result)
-            f.close()
-            await call.message.answer(local.welcome["ru"])
+        await call.message.answer(local.welcome["ru"])
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -135,14 +132,23 @@ async def send_welcome(message: types.Message):
     #     fi.write(f"{message.chat.id}\n")
     #     fi.close()
     # await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
-    buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
-    keyboard_inline = inmarkup().add(buttons[0], buttons[1])
-    await message.reply("Pick a language:", reply_markup=keyboard_inline)
+    f = open(f'{os.getcwd()}/users.json', 'r')
+    s = json.loads(f.read())
+    f.close()
+    if message.from_user.id in s["en"] or s["ru"]:
+        if message.from_user.id in s["en"]:
+            await message.reply(local.start["en"], "Markdown", None, False)
+        elif message.from_user.id in s["ru"]:
+            pass
+    else:
+        buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
+        keyboard_inline = inmarkup().add(buttons[0], buttons[1])
+        await message.reply("Pick a language:", reply_markup=keyboard_inline)
 
 
 @dp.message_handler()
 @dp.message_handler(filters.Regexp(r'(https?://\S+)'))
-async def handle_tiktok_video(message: types.Message):
+async def handle_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
     agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
     # Download the video using yt-dlp
@@ -161,7 +167,7 @@ async def handle_tiktok_video(message: types.Message):
 @dp.callback_query_handler(text=["langen", "langru"])
 async def check_button(call: types.CallbackQuery):
     # Checking which button is pressed and respond accordingly
-    userbase_modifier_on_call(call)
+    await userbase_modifier_on_call(call)
     await call.answer()
 
 if __name__ == '__main__':
