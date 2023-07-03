@@ -3,17 +3,20 @@ import os
 import logging
 import yt_dlp
 import re
+import json
+import localization as local
 
 from aiogram import Bot, Dispatcher, types, filters, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ParseMode
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup as inmarkup
+from aiogram.types import InlineKeyboardButton as inbutton
 
 logging.basicConfig(level=logging.INFO)
 
-API_TOKEN = '5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo'
+API_TOKEN = os.environ['TOKEN']
 ADMIN_ID = '1554852514'
 #ADMIN_ID = '5229672176'
 todays_ad = ""
@@ -22,6 +25,35 @@ class Form(StatesGroup):
     todayad = State()
     nowad = State()
     ays = State()
+
+async def userbase_modifier_on_call(call):
+    if call.data == "langen":
+        f = open(f'{os.getcwd()}/users.json', 'r')
+        s = json.loads(f.read())
+        f.close()
+        if call.from_user.id in s["en"] or s["ru"]:
+            pass
+        else: 
+            s["en"].append(call.from_user.id)
+            result = json.dumps(s)
+            f = open(f'{os.getcwd()}/users.json', 'w')
+            f.write(result)
+            f.close()
+        await call.message.answer(local.welcome["en"])
+
+    if call.data == "langru":
+        f = open(f'{os.getcwd()}/users.json', 'r')
+        s = json.loads(f.read())
+        f.close()
+        if call.from_user.id in s["en"] or s["ru"]:
+            pass
+        else: 
+            s["ru"].append(call.from_user.id)
+            result = json.dumps(s)
+            f = open(f'{os.getcwd()}/users.json', 'w')
+            f.write(result)
+            f.close()
+            await call.message.answer(local.welcome["ru"])
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -91,18 +123,22 @@ async def process_name(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
-    f = open(f'{os.getcwd()}/users.txt', 'r')
-    s = f.read().find(str(message.chat.id))
-    f.close()
-    print(message.chat.id)
-    if s != -1:
-        pass
+    # f = open(f'{os.getcwd()}/users.txt', 'r')
+    # s = f.read().find(str(message.chat.id))
+    # f.close()
+    # print(message.chat.id)
+    # if s != -1:
+    #     pass
 
-    else:
-        fi = open(f'{os.getcwd()}/users.txt', 'a')
-        fi.write(f"{message.chat.id}\n")
-        fi.close()
-    await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
+    # else:
+    #     fi = open(f'{os.getcwd()}/users.txt', 'a')
+    #     fi.write(f"{message.chat.id}\n")
+    #     fi.close()
+    # await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
+    buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
+    keyboard_inline = inmarkup().add(buttons[0], buttons[1])
+    await message.reply("Pick a language:", reply_markup=keyboard_inline)
+
 
 @dp.message_handler()
 @dp.message_handler(filters.Regexp(r'(https?://\S+)'))
@@ -119,9 +155,14 @@ async def handle_tiktok_video(message: types.Message):
                 await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
                 # asyncio.sleep(10)
                 os.remove(f'{os.getcwd()}/{filename}')
-    except:
-        await bot.send_message(message.chat.id, "Oh no, an error occured! Please report it to @lightdownload_feedback_bot with code")
+    except yt_dlp.utils.DownloadError:
+        await bot.send_message(message.chat.id, f"Oh no, an error occured! Please double check the link")
+
+@dp.callback_query_handler(text=["langen", "langru"])
+async def check_button(call: types.CallbackQuery):
+    # Checking which button is pressed and respond accordingly
+    userbase_modifier_on_call(call)
+    await call.answer()
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-    
