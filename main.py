@@ -20,38 +20,49 @@ ADMIN_ID = '1554852514'
 class Form(StatesGroup):
     nowad = State()
 
+
+def search_userbase(base, id):
+    if id in base["en"]:
+        return "en"
+    elif id in base["ru"]:
+        return "ru"
+    else:
+        return False
+
 async def userbase_modifier_on_call(call):
     if call.data == "langen":
-        f = open(f'{os.getcwd()}/users.json', 'r', 1,)
-        s = json.loads(f.read())
-        f.close()
-        if call.from_user.id in s["en"]:pass
+        file = open(f'{os.getcwd()}/users.json', 'r', 1)
+        userbase = json.loads(file.read())
+        file.close()
+        if search_userbase(userbase, call.from_user.id) == "en":pass
+        elif search_userbase(userbase, call.from_user.id) == "ru":
+            userbase["ru"].remove(call.from_user.id)
+            userbase["en"].append(call.from_user.id)
+            wrtu(userbase)
         else:
-            try: 
-                s["en"].append(call.from_user.id)
-                result = json.dumps(s)
-                f = open(f'{os.getcwd()}/users.json', 'w')
-                f.write(result)
-                f.close()
-            finally:
-                s["ru"].remove(call.from_user.id)
+            userbase["en"].append(call.from_user.id)
+            wrtu(userbase)
         await call.message.answer(local.welcome["en"])
 
     if call.data == "langru":
-        f = open(f'{os.getcwd()}/users.json', 'r')
-        s = json.loads(f.read())
-        f.close()
-        if call.from_user.id in s["ru"]:pass
+        file = open(f'{os.getcwd()}/users.json', 'r', 1)
+        userbase = json.loads(file.read())
+        file.close()
+        if search_userbase(userbase, call.from_user.id) == "ru":pass
+        elif search_userbase(userbase, call.from_user.id) == "en":
+            userbase["en"].remove(call.from_user.id)
+            userbase["ru"].append(call.from_user.id)
+            wrtu(userbase)
         else:
-            try: 
-                s["ru"].append(call.from_user.id)
-                result = json.dumps(s)
-                f = open(f'{os.getcwd()}/users.json', 'w')
-                f.write(result)
-                f.close()
-            finally:
-                s["en"].remove(call.from_user.id)
+            userbase["ru"].append(call.from_user.id)
+            wrtu(userbase)
         await call.message.answer(local.welcome["en"])
+
+def wrtu(userbase):
+    result = json.dumps(userbase)
+    file = open(f'{os.getcwd()}/users.json', 'w')
+    file.write(result)
+    file.close()
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -99,18 +110,16 @@ async def send_welcome(message: types.Message):
     #     fi.write(f"{message.chat.id}\n")
     #     fi.close()
     # await message.reply("Hello! I'm a TikTok video downloader bot. Just send me a TikTok video link and I'll download it for you!")
-    f = open(f'{os.getcwd()}/users.json', 'r')
-    s = json.loads(f.read())
-    f.close()
-    if message.from_user.id in s["en"] or s["ru"]:
-        if message.from_user.id in s["en"]:
-            await message.reply(local.start["en"], "Markdown", None, False)
-        elif message.from_user.id in s["ru"]:
-            pass
-    else:
-        buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
-        keyboard_inline = inmarkup().add(buttons[0], buttons[1])
-        await message.reply("Pick a language:", reply_markup=keyboard_inline)
+    file = open(f'{os.getcwd()}/users.json', 'r')
+    userbase = json.loads(file.read())
+    file.close()
+    with search_userbase(userbase, message.from_user.id) as sdb:
+        if sdb == str:
+            await message.reply(local.start[sdb], "Markdown", None, False)
+        else:
+            buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
+            keyboard_inline = inmarkup().add(buttons[0], buttons[1])
+            await message.reply("Pick a language:", reply_markup=keyboard_inline)
 
 
 @dp.message_handler()
@@ -140,19 +149,19 @@ async def check_button_langs(call: types.CallbackQuery):
 async def check_button_ad(call: types.CallbackQuery, state: FSMContext):
     if call.data == "aden":
         async with state.proxy() as data:
-            f = open(f'{os.getcwd()}/users.json', 'r')
-            s = json.loads(f.read())
-            f.close()
-            for i in s["en"]:
+            file = open(f'{os.getcwd()}/users.json', 'r')
+            userbase = json.loads(file.read())
+            file.close()
+            for i in userbase["en"]:
                 await bot.copy_message(chat_id=i, from_chat_id=call.from_chat.id, message_id=data['nowad'].message_id)
             await call.message.answer("sent!")
 
     if call.data == "adru":
         async with state.proxy() as data:
-            f = open(f'{os.getcwd()}/users.json', 'r')
-            s = json.loads(f.read())
-            f.close()
-            for i in s["ru"]:
+            file = open(f'{os.getcwd()}/users.json', 'r')
+            userbase = json.loads(file.read())
+            file.close()
+            for i in userbase["ru"]:
                 await bot.copy_message(chat_id=i, from_chat_id=call.from_chat.id, message_id=data['nowad'].message_id)
             await call.message.answer(local.welcome["en"])
     await state.finish()
