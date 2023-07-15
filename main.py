@@ -22,7 +22,7 @@ class Form(StatesGroup):
 
 async def userbase_modifier_on_call(call):
     if call.data == "langen":
-        f = open(f'{os.getcwd()}/users.json', 'r', 1)
+        f = open(f'{os.getcwd()}/users.json', 'r', 1,)
         s = json.loads(f.read())
         f.close()
         if call.from_user.id in s["en"]:pass
@@ -44,13 +44,13 @@ async def userbase_modifier_on_call(call):
         if call.from_user.id in s["ru"]:pass
         else:
             try: 
-                s["en"].append(call.from_user.id)
+                s["ru"].append(call.from_user.id)
                 result = json.dumps(s)
                 f = open(f'{os.getcwd()}/users.json', 'w')
                 f.write(result)
                 f.close()
             finally:
-                s["ru"].remove(call.from_user.id)
+                s["en"].remove(call.from_user.id)
         await call.message.answer(local.welcome["en"])
 
 bot = Bot(token=API_TOKEN)
