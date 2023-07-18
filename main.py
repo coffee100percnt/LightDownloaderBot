@@ -12,15 +12,20 @@ from aiogram.types import InlineKeyboardButton as inbutton
 import localization as local
 
 logging.basicConfig(level=logging.INFO)
-
 API_TOKEN = "5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo"
 ADMIN_ID = '1554852514'
 #ADMIN_ID = '5229672176'
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
+#region Forms
 class Form(StatesGroup):
     nowad = State()
+class DownloadState(StatesGroup):
+    waiting_for_video_url = State()
+#endregion
 
-
+#region Userbase tools
 def search_userbase(base, id):
     if id in base["en"]:
         return "en"
@@ -39,6 +44,10 @@ async def userbase_modifier_on_call(call):
             userbase["ru"].remove(call.from_user.id)
             userbase["en"].append(call.from_user.id)
             wrtu(userbase)
+        elif search_userbase(userbase, call.from_user.id) == "ua":
+            userbase["ua"].remove(call.from_user.id)
+            userbase["en"].append(call.from_user.id)
+            wrtu(userbase)
         else:
             userbase["en"].append(call.from_user.id)
             wrtu(userbase)
@@ -53,23 +62,41 @@ async def userbase_modifier_on_call(call):
             userbase["en"].remove(call.from_user.id)
             userbase["ru"].append(call.from_user.id)
             wrtu(userbase)
+        elif search_userbase(userbase, call.from_user.id) == "ua":
+            userbase["ua"].remove(call.from_user.id)
+            userbase["ru"].append(call.from_user.id)
+            wrtu(userbase)
         else:
             userbase["ru"].append(call.from_user.id)
             wrtu(userbase)
         await call.message.answer(local.welcome["en"])
+        
+        if call.data == "langua":
+            file = open(f'{os.getcwd()}/users.json', 'r', 1)
+            userbase = json.loads(file.read())
+            file.close()
+            if search_userbase(userbase, call.from_user.id) == "ua":pass
+            elif search_userbase(userbase, call.from_user.id) == "ru":
+                userbase["ru"].remove(call.from_user.id)
+                userbase["ua"].append(call.from_user.id)
+                wrtu(userbase)
+            elif search_userbase(userbase, call.from_user.id) == "en":
+                userbase["en"].remove(call.from_user.id)
+                userbase["ua"].append(call.from_user.id)
+                wrtu(userbase)
+            else:
+                userbase["ua"].append(call.from_user.id)
+                wrtu(userbase)
+            await call.message.answer(local.welcome["en"])
 
 def wrtu(userbase):
     result = json.dumps(userbase)
     file = open(f'{os.getcwd()}/users.json', 'w')
     file.write(result)
     file.close()
+#endregion
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot, storage=MemoryStorage())
-
-class DownloadState(StatesGroup):
-    waiting_for_video_url = State()
-
+#region Message handlers
 @dp.message_handler(state='*', commands=['cancel'])
 async def cancel_handler(message: types.Message, state: FSMContext):
     """Allow user to cancel action via /cancel command"""
@@ -117,12 +144,12 @@ async def send_welcome(message: types.Message):
         if sdb == str:
             await message.reply(local.start[sdb], "Markdown", None, False)
         else:
-            buttons = [inbutton(text="English", callback_data="langen"), inbutton(text="Русский", callback_data="langru")]
+            buttons = [inbutton(text="English", callback_data="langen"),
+                       inbutton(text="Русский", callback_data="langru"),
+                       inbutton(text="Українська", callback_data="langua")]
             keyboard_inline = inmarkup().add(buttons[0], buttons[1])
             await message.reply("Pick a language:", reply_markup=keyboard_inline)
 
-
-@dp.message_handler()
 @dp.message_handler(filters.Regexp(r'(https?://\S+)'))
 async def handle_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
@@ -165,6 +192,7 @@ async def check_button_ad(call: types.CallbackQuery, state: FSMContext):
                 await bot.copy_message(chat_id=i, from_chat_id=call.from_chat.id, message_id=data['nowad'].message_id)
             await call.message.answer(local.welcome["en"])
     await state.finish()
+#endregion
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
