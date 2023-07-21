@@ -69,7 +69,7 @@ async def userbase_modifier_on_call(call):
         else:
             userbase["ru"].append(call.from_user.id)
             wrtu(userbase)
-        await call.message.answer(local.welcome["en"])
+        await call.message.answer(local.welcome["ru"])
         
         if call.data == "langua":
             file = open(f'{os.getcwd()}/users.json', 'r', 1)
@@ -87,7 +87,7 @@ async def userbase_modifier_on_call(call):
             else:
                 userbase["ua"].append(call.from_user.id)
                 wrtu(userbase)
-            await call.message.answer(local.welcome["en"])
+            await call.message.answer(local.welcome["ua"])
 
 def wrtu(userbase):
     result = json.dumps(userbase)
