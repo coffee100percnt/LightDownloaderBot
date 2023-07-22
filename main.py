@@ -143,7 +143,7 @@ async def send_welcome(message: types.Message):
     userbase = json.loads(file.read())
     file.close()
     with search_userbase(userbase, message.from_user.id) as sdb:
-        if sdb == str:
+        if isinstance(str, sdb):
             await message.reply(local.start[sdb], "Markdown", None, False)
         else:
             buttons = [inbutton(text="English", callback_data="langen"),
