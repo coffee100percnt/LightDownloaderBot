@@ -31,6 +31,8 @@ def search_userbase(base, id):
         return "en"
     elif id in base["ru"]:
         return "ru"
+    elif id in base["ua"]:
+        return "ua"
     else:
         return False
 
