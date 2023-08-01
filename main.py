@@ -10,6 +10,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup as inmarkup
 from aiogram.types import InlineKeyboardButton as inbutton
 import localization as local
+from compress_video import compress_video
 
 logging.basicConfig(level=logging.INFO)
 API_TOKEN = "5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo"
@@ -157,15 +158,18 @@ async def handle_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
     try:   
         for i in range(len(video_url)):
-            with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s', 'cookiefile': f"{os.getcwd()}/insta.txt"}) as ydl:
+            with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s', 'cookiefile': f"{os.getcwd()}/insta.txt", "format": "mp4"}) as ydl:
                 await bot.send_chat_action(message.chat.id, "upload_video")
                 result = ydl.extract_info(video_url[i], download=True)
                 filename = ydl.prepare_filename(result)
-                await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
+                if os.path.getsize(filename) <= 20000000:await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
+                elif os.path.getsize(filename) > 20000000:
+                    await bot.send_message(message.chat.id, f"The video too big in size!")
+                    
                 # asyncio.sleep(10)
                 os.remove(f'{os.getcwd()}/{filename}')
     except yt_dlp.utils.DownloadError:
-        await bot.send_message(message.chat.id, f"Oh no, an error occured! Please double check the link")
+        await bot.send_message(message.chat.id, f"Oh no, an error occured! Please double check the link or report this error with the link to @lightdownload_feedback_bot")
 
 @dp.callback_query_handler(text=["langen", "langru"])
 async def check_button_langs(call: types.CallbackQuery):
