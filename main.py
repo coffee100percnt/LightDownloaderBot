@@ -3,14 +3,15 @@ import json
 import os
 import logging
 import yt_dlp
-from aiogram import Bot, Dispatcher, types, filters, executor
+from aiogram import Bot, Dispatcher, types, filters, executor, utils
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup as inmarkup
 from aiogram.types import InlineKeyboardButton as inbutton
 import localization as local
-from compress_video import compress_video
+from contextlib import suppress
+
 
 logging.basicConfig(level=logging.INFO)
 API_TOKEN = "5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo"
@@ -158,13 +159,16 @@ async def handle_video(message: types.Message):
     video_url = re.findall(r'(https?://\S+)', message.text)
     try:   
         for i in range(len(video_url)):
-            with yt_dlp.YoutubeDL({'outtmpl': '%(id)s.%(ext)s', 'cookiefile': f"{os.getcwd()}/insta.txt", "format": "mp4"}) as ydl:
+            with yt_dlp.YoutubeDL({'outtmpl': '%(id)s{0}.%(ext)s', 'cookiefile': f"{os.getcwd()}/insta.txt", "format": "mp4"}) as ydl:
                 await bot.send_chat_action(message.chat.id, "upload_video")
                 result = ydl.extract_info(video_url[i], download=True)
-                filename = ydl.prepare_filename(result)
-                if os.path.getsize(filename) <= 20000000:await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
-                elif os.path.getsize(filename) > 20000000:
-                    await bot.send_message(message.chat.id, f"The video too big in size!")
+                videoname = ydl.prepare_filename(result)
+                filename = videoname.format(message.chat.id)
+                os.rename(videoname, filename)
+                with suppress(utils.exceptions.BotBlocked):
+                    if os.path.getsize(filename) <= 50000000:await bot.send_video(chat_id=message.chat.id, video=open(filename, 'rb'), caption=f"🎥 {video_url[i]}\n\n@LightDownloaderBot")
+                    elif os.path.getsize(filename) > 50000000:
+                        await bot.send_message(message.chat.id, f"The video too big in size!")
                     
                 # asyncio.sleep(10)
                 os.remove(f'{os.getcwd()}/{filename}')
