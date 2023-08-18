@@ -14,7 +14,7 @@ from contextlib import suppress
 
 
 logging.basicConfig(level=logging.INFO)
-API_TOKEN = "5626410964:AAFSaQJ07OHcCpY_KAGdx64OETJ1LhmLQbo"
+API_TOKEN = "🤫"
 ADMIN_ID = '1554852514'
 #ADMIN_ID = '5229672176'
 bot = Bot(token=API_TOKEN)
